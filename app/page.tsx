@@ -1,65 +1,167 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
+import { Log } from "../utils/logger";
+
+const AUTH_URL = "http://20.207.122.201/evaluation-service/auth";
+
+export default function LoginPage() {
+  const [email, setEmail] = useState("");
+  const [clientId, setClientId] = useState("");
+  const [clientSecret, setClientSecret] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [authError, setAuthError] = useState("");
+  const router = useRouter();
+
+  useEffect(() => {
+    // Clear any expired token from previous sessions to prevent background 401 errors
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("campus_access_token");
+    }
+    Log("frontend", "INFO", "login_page", "Login page loaded");
+  }, []);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError("");
+
+    if (email && clientId && clientSecret) {
+      setIsSubmitting(true);
+      try {
+        const response = await fetch(AUTH_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: email,
+            clientID: clientId,
+            clientSecret: clientSecret,
+            // Hardcoded required fields to satisfy the backend
+            name: "praveen n",
+            rollNo: "ra2311026010066",
+            accessCode: "QkbpxH"
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`Authentication failed: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const token = data.access_token || data.token || (typeof data === 'string' ? data : null);
+
+        if (token) {
+          localStorage.setItem("campus_access_token", token);
+
+          await Log("frontend", "INFO", "auth", `User verified and logged in: ${email}`);
+          router.push("/dashboard");
+        } else {
+          setAuthError("No access token returned from server.");
+          setIsSubmitting(false);
+        }
+      } catch (err: any) {
+        setAuthError(err.message || "Invalid credentials. Please try again.");
+        setIsSubmitting(false);
+      }
+    }
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+    <div className="login-wrapper">
+      <div className="bg-shape shape-1"></div>
+      <div className="bg-shape shape-2"></div>
+
+      <motion.div
+        className="glass-card"
+        initial={{ opacity: 0, y: 30, rotateX: 10 }}
+        animate={{ opacity: 1, y: 0, rotateX: 0 }}
+        transition={{ duration: 0.8, ease: "easeOut" }}
+        whileHover={{ scale: 1.02, rotateX: 2, rotateY: -2 }}
+        style={{ perspective: 1000 }}
+      >
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3, duration: 0.8 }}
+        >
+          <div className="logo-container">
+            <div className="logo-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M2 17L12 22L22 17" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M2 12L12 17L22 12" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </div>
+          </div>
+
+          <h1 className="login-title-glass">Campus Gateway</h1>
+          <p className="login-subtitle">Authenticate to access notifications</p>
+
+          <form onSubmit={handleLogin} className="glass-form">
+            <div className="form-group-glass">
+              <label htmlFor="email">Email Address</label>
+              <input
+                type="email"
+                id="email"
+                className="input-glass"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="student@campus.edu"
+                required
+              />
+            </div>
+
+            <div className="form-group-glass">
+              <label htmlFor="clientId">Client ID</label>
+              <input
+                type="text"
+                id="clientId"
+                className="input-glass"
+                value={clientId}
+                onChange={(e) => setClientId(e.target.value)}
+                placeholder="Enter your Client ID"
+                required
+              />
+            </div>
+
+            <div className="form-group-glass">
+              <label htmlFor="clientSecret">Client Secret Code</label>
+              <input
+                type="password"
+                id="clientSecret"
+                className="input-glass"
+                value={clientSecret}
+                onChange={(e) => setClientSecret(e.target.value)}
+                placeholder="••••••••••••••••"
+                required
+              />
+            </div>
+
+            {authError && (
+              <div style={{ color: "#ef4444", fontSize: "0.85rem", textAlign: "center", marginTop: "0.5rem" }}>
+                {authError}
+              </div>
+            )}
+
+            <motion.button
+              type="submit"
+              className="btn-glass"
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              disabled={isSubmitting}
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+              {isSubmitting ? (
+                <span className="spinner"></span>
+              ) : (
+                "Authorize Access"
+              )}
+            </motion.button>
+          </form>
+        </motion.div>
+      </motion.div>
     </div>
   );
 }
