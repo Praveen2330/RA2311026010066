@@ -8,7 +8,7 @@ const TYPE_WEIGHT: Record<string, number> = {
   Event: 100,
 };
 
-export async function fetchNotifications() {
+export async function fetchNotifications(params?: { limit?: number; page?: number; notification_type?: string }) {
   await Log("frontend", "INFO", "api_fetch", "Initiating notifications fetch");
   
   const token = typeof window !== "undefined" ? localStorage.getItem("campus_access_token") : null;
@@ -18,7 +18,21 @@ export async function fetchNotifications() {
   }
 
   try {
-    const response = await fetch(`${BASE_URL}/notifications`, {
+    let url = `${BASE_URL}/notifications`;
+    if (params) {
+      const queryParams = new URLSearchParams();
+      if (params.limit) queryParams.append("limit", params.limit.toString());
+      if (params.page) queryParams.append("page", params.page.toString());
+      if (params.notification_type && params.notification_type !== "All") {
+        queryParams.append("notification_type", params.notification_type);
+      }
+      const queryString = queryParams.toString();
+      if (queryString) {
+        url += `?${queryString}`;
+      }
+    }
+
+    const response = await fetch(url, {
       method: "GET",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -37,25 +51,25 @@ export async function fetchNotifications() {
     return Array.isArray(data) ? data : data.notifications ?? [];
   } catch (error: any) {
     await Log("frontend", "ERROR", "api_fetch", `Fetch failed: ${error.message}`);
-    throw error; // Re-throw so the dashboard catches it
+    throw error;
   }
 }
 
 function computePriority(notification: any) {
-  const type = notification.type || notification.category || "Event";
+  const type = notification.type || notification.Type || notification.category || "Event";
   const weight = TYPE_WEIGHT[type] ?? 0;
 
   // Normalise timestamp to keep weight dominant
-  const ts = notification.timestamp
-    ? new Date(notification.timestamp).getTime() / 1e10
+  const ts = notification.timestamp || notification.Timestamp
+    ? new Date(notification.timestamp || notification.Timestamp).getTime() / 1e10
     : 0;
 
   return weight + ts;
 }
 
-export function getTop10Notifications(notifications: any[]) {
+export function getTop10Notifications(notifications: any[], n: number = 10) {
   return [...notifications]
     .map((n) => ({ ...n, _priority: computePriority(n) }))
     .sort((a, b) => b._priority - a._priority)
-    .slice(0, 10);
+    .slice(0, n);
 }

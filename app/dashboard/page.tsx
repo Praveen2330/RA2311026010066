@@ -1,156 +1,125 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect } from "react";
 import { Log } from "../../utils/logger";
-import { fetchNotifications, getTop10Notifications } from "../../api/notifications";
+import { fetchNotifications } from "../../api/notifications";
 import NotificationCard from "../../components/NotificationCard";
+import NavBar from "../../components/NavBar";
+import { 
+  Typography, Container, Box, Select, MenuItem, 
+  FormControl, InputLabel, Grid, CircularProgress, Alert, TextField 
+} from "@mui/material";
+
+interface ApiParams {
+  limit?: number;
+  page?: number;
+  notification_type?: string;
+}
 
 export default function Dashboard() {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filter, setFilter] = useState("All");
+  
+  // API Query states
+  const [filterType, setFilterType] = useState("All");
+  const [limit, setLimit] = useState<number>(10);
+  const [page, setPage] = useState<number>(1);
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const params: ApiParams = { page, limit };
+      if (filterType !== "All") {
+        params.notification_type = filterType;
+      }
+      // @ts-ignore
+      const data = await fetchNotifications(params);
+      setNotifications(data);
+      setError(null);
+    } catch (err: any) {
+      setError(err.message || "Failed to load notifications.");
+      if (err.message.includes("401") || err.message.includes("No access token")) {
+        setTimeout(() => window.location.href = "/", 2000);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    Log("frontend", "INFO", "dashboard", "Dashboard loaded");
-    
-    async function loadData() {
-      try {
-        const data = await fetchNotifications();
-        setNotifications(data);
-        setError(null);
-      } catch (err: any) {
-        setError(err.message || "Failed to load notifications.");
-        // Optional: redirect to login if 401
-        if (err.message.includes("401") || err.message.includes("No access token")) {
-          setTimeout(() => window.location.href = "/", 2000);
-        }
-      } finally {
-        setLoading(false);
-      }
-    }
-
+    Log("frontend", "INFO", "dashboard", "Dashboard All Notifications loaded");
     loadData();
-  }, []);
-
-  const filteredNotifications = useMemo(() => {
-    if (filter === "All") return notifications;
-    return notifications.filter(
-      (n) => (n.type || n.category || "Event").toLowerCase() === filter.toLowerCase()
-    );
-  }, [notifications, filter]);
-
-  const top10 = useMemo(() => getTop10Notifications(filteredNotifications), [filteredNotifications]);
-
-  const handleFilterChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newFilter = e.target.value;
-    setFilter(newFilter);
-    await Log("frontend", "INFO", "filter", `Filter changed to ${newFilter}`);
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem("campus_access_token");
-    window.location.href = "/";
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterType, limit, page]);
 
   return (
-    <div className="dashboard-wrapper">
-      {/* Dynamic Background Elements */}
-      <div className="dashboard-bg-shape1"></div>
-      <div className="dashboard-bg-shape2"></div>
-
-      <header className="navbar-glass">
-        <h1 className="nav-title-gradient">Campus Notifications</h1>
-        <motion.button 
-          className="btn-logout"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={handleLogout}
-        >
-          Logout
-        </motion.button>
-      </header>
+    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', pb: 8 }}>
+      <NavBar />
       
-      <main className="main-content">
-        <div className="dashboard-header">
-          <motion.h2 
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            Overview
-          </motion.h2>
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            <select className="filter-select-glass" value={filter} onChange={handleFilterChange}>
-              <option value="All">All Types</option>
-              <option value="Placement">Placement</option>
-              <option value="Result">Result</option>
-              <option value="Event">Event</option>
-            </select>
-          </motion.div>
-        </div>
-
-        {loading && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="status-message">
-            <span className="spinner" style={{ marginRight: '10px', verticalAlign: 'middle', borderColor: 'rgba(255,255,255,0.2)', borderTopColor: '#3b82f6' }}></span>
-            Loading securely...
-          </motion.div>
-        )}
-        
-        {error && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="status-message" style={{ color: '#f87171', border: '1px dashed rgba(248, 113, 113, 0.3)' }}>
-            ⚠️ {error}
-          </motion.div>
-        )}
-
-        {!loading && !error && (
-          <AnimatePresence>
-            <motion.div
-              key="dashboard-content"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+      <Container maxWidth="xl" sx={{ mt: 6 }}>
+        <Box sx={{ 
+          display: 'flex', flexWrap: 'wrap', gap: 3, mb: 5, alignItems: 'center', 
+          bgcolor: 'rgba(255, 255, 255, 0.7)', p: 3, borderRadius: 4, 
+          boxShadow: '0 4px 30px rgba(0, 0, 0, 0.05)', backdropFilter: 'blur(10px)',
+          border: '1px solid rgba(255, 255, 255, 0.5)'
+        }}>
+          <Typography variant="h4" sx={{ fontWeight: 800, flexGrow: 1, color: 'primary.dark' }}>
+            All Notifications
+          </Typography>
+          
+          <FormControl size="small" sx={{ minWidth: 150 }}>
+            <InputLabel>Type Filter</InputLabel>
+            <Select
+              value={filterType}
+              label="Type Filter"
+              onChange={(e) => setFilterType(e.target.value)}
             >
-              <motion.h3 
-                className="section-title"
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}
-              >
-                Top Priority Notifications
-              </motion.h3>
-              {top10.length === 0 ? (
-                <p className="status-message">No priority notifications.</p>
-              ) : (
-                <div className="notifications-grid">
-                  {top10.map((n, i) => (
-                    <NotificationCard key={n.ID || n.id || `top-${i}`} notification={n} isNewer={i < 3} index={i} />
-                  ))}
-                </div>
-              )}
+              <MenuItem value="All">All</MenuItem>
+              <MenuItem value="Placement">Placement</MenuItem>
+              <MenuItem value="Result">Result</MenuItem>
+              <MenuItem value="Event">Event</MenuItem>
+            </Select>
+          </FormControl>
 
-              <motion.h3 
-                className="section-title"
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}
-              >
-                All Notifications ({filteredNotifications.length})
-              </motion.h3>
-              {filteredNotifications.length === 0 ? (
-                <p className="status-message">No notifications found for this filter.</p>
-              ) : (
-                <div className="notifications-grid">
-                  {filteredNotifications.map((n, i) => (
-                    <NotificationCard key={n.ID || n.id || `all-${i}`} notification={n} isNewer={false} index={i + top10.length} />
-                  ))}
-                </div>
-              )}
-            </motion.div>
-          </AnimatePresence>
+          <TextField 
+            type="number" 
+            label="API Limit" 
+            value={limit} 
+            onChange={(e) => {
+              const val = Number(e.target.value);
+              setLimit(val > 10 ? 10 : val < 1 ? 1 : val);
+            }} 
+            size="small" 
+            sx={{ width: 100 }}
+          />
+          
+          <TextField 
+            type="number" 
+            label="API Page" 
+            value={page} 
+            onChange={(e) => setPage(Number(e.target.value) || 1)} 
+            size="small" 
+            sx={{ width: 100 }}
+          />
+        </Box>
+
+        {loading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}><CircularProgress /></Box>
+        ) : error ? (
+          <Alert severity="error">{error}</Alert>
+        ) : notifications.length === 0 ? (
+          <Alert severity="info">No notifications found.</Alert>
+        ) : (
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' }, gap: 3 }}>
+            {notifications.map((n, i) => (
+              <Box key={n.ID || n.id || `all-${i}`}>
+                <NotificationCard notification={n} isNewer={false} />
+              </Box>
+            ))}
+          </Box>
         )}
-      </main>
-    </div>
+      </Container>
+    </Box>
   );
 }

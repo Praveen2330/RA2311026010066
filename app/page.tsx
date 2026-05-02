@@ -2,8 +2,16 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
 import { Log } from "../utils/logger";
+import { 
+  Box, Card, CardContent, Typography, TextField, 
+  Button, CircularProgress, Alert, InputAdornment
+} from "@mui/material";
+import { motion } from "framer-motion";
+import EmailIcon from '@mui/icons-material/Email';
+import VpnKeyIcon from '@mui/icons-material/VpnKey';
+import CodeIcon from '@mui/icons-material/Code';
+import SchoolIcon from '@mui/icons-material/School';
 
 const AUTH_URL = "http://20.207.122.201/evaluation-service/auth";
 
@@ -16,7 +24,6 @@ export default function LoginPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // Clear any expired token from previous sessions to prevent background 401 errors
     if (typeof window !== "undefined") {
       localStorage.removeItem("campus_access_token");
     }
@@ -39,7 +46,6 @@ export default function LoginPage() {
             email: email,
             clientID: clientId,
             clientSecret: clientSecret,
-            // Hardcoded required fields to satisfy the backend
             name: "praveen n",
             rollNo: "ra2311026010066",
             accessCode: "QkbpxH"
@@ -55,7 +61,6 @@ export default function LoginPage() {
 
         if (token) {
           localStorage.setItem("campus_access_token", token);
-
           await Log("frontend", "INFO", "auth", `User verified and logged in: ${email}`);
           router.push("/dashboard");
         } else {
@@ -70,98 +75,177 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="login-wrapper">
-      <div className="bg-shape shape-1"></div>
-      <div className="bg-shape shape-2"></div>
+    <Box sx={{ 
+      minHeight: '100vh', 
+      display: 'flex', 
+      alignItems: 'center', 
+      justifyContent: 'center',
+      background: 'linear-gradient(135deg, #1E1B4B 0%, #312E81 100%)', // Deep colorful space background
+      padding: 2,
+      perspective: '1000px',
+      overflow: 'hidden',
+      position: 'relative'
+    }}>
+      {/* Pink / Magenta Orb */}
+      <motion.div 
+        animate={{ y: [0, -40, 0], x: [0, 30, 0], rotateZ: [0, 45, 0] }} 
+        transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+        style={{
+          position: 'absolute', top: '-10%', left: '-10%', width: '60%', height: '60%',
+          background: 'radial-gradient(circle, rgba(236,72,153,0.4) 0%, rgba(255,255,255,0) 70%)',
+          zIndex: 0, filter: 'blur(40px)'
+        }} 
+      />
+      {/* Cyan / Teal Orb */}
+      <motion.div 
+        animate={{ y: [0, 50, 0], x: [0, -40, 0], rotateZ: [0, -30, 0] }} 
+        transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
+        style={{
+          position: 'absolute', bottom: '-20%', right: '-10%', width: '70%', height: '70%',
+          background: 'radial-gradient(circle, rgba(6,182,212,0.4) 0%, rgba(255,255,255,0) 70%)',
+          zIndex: 0, filter: 'blur(40px)'
+        }} 
+      />
+      {/* Orange / Yellow Orb */}
+      <motion.div 
+        animate={{ scale: [1, 1.2, 1], x: [-20, 20, -20] }} 
+        transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
+        style={{
+          position: 'absolute', top: '20%', right: '10%', width: '50%', height: '50%',
+          background: 'radial-gradient(circle, rgba(245,158,11,0.3) 0%, rgba(255,255,255,0) 70%)',
+          zIndex: 0, filter: 'blur(50px)'
+        }} 
+      />
 
       <motion.div
-        className="glass-card"
-        initial={{ opacity: 0, y: 30, rotateX: 10 }}
-        animate={{ opacity: 1, y: 0, rotateX: 0 }}
-        transition={{ duration: 0.8, ease: "easeOut" }}
-        whileHover={{ scale: 1.02, rotateX: 2, rotateY: -2 }}
-        style={{ perspective: 1000 }}
+        initial={{ opacity: 0, y: 50, rotateX: 15, scale: 0.9 }}
+        animate={{ opacity: 1, y: 0, rotateX: 0, scale: 1 }}
+        transition={{ duration: 0.8, type: "spring", bounce: 0.4 }}
+        style={{ width: '100%', maxWidth: 480, zIndex: 1 }}
+        whileHover={{ scale: 1.02, rotateX: 2, rotateY: -2, transition: { duration: 0.3 } }}
       >
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.3, duration: 0.8 }}
-        >
-          <div className="logo-container">
-            <div className="logo-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M2 17L12 22L22 17" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M2 12L12 17L22 12" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </div>
-          </div>
-
-          <h1 className="login-title-glass">Campus Gateway</h1>
-          <p className="login-subtitle">Authenticate to access notifications</p>
-
-          <form onSubmit={handleLogin} className="glass-form">
-            <div className="form-group-glass">
-              <label htmlFor="email">Email Address</label>
-              <input
-                type="email"
-                id="email"
-                className="input-glass"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="student@campus.edu"
-                required
-              />
-            </div>
-
-            <div className="form-group-glass">
-              <label htmlFor="clientId">Client ID</label>
-              <input
-                type="text"
-                id="clientId"
-                className="input-glass"
-                value={clientId}
-                onChange={(e) => setClientId(e.target.value)}
-                placeholder="Enter your Client ID"
-                required
-              />
-            </div>
-
-            <div className="form-group-glass">
-              <label htmlFor="clientSecret">Client Secret Code</label>
-              <input
-                type="password"
-                id="clientSecret"
-                className="input-glass"
-                value={clientSecret}
-                onChange={(e) => setClientSecret(e.target.value)}
-                placeholder="••••••••••••••••"
-                required
-              />
-            </div>
-
-            {authError && (
-              <div style={{ color: "#ef4444", fontSize: "0.85rem", textAlign: "center", marginTop: "0.5rem" }}>
-                {authError}
-              </div>
-            )}
-
-            <motion.button
-              type="submit"
-              className="btn-glass"
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-              disabled={isSubmitting}
+        <Card elevation={10} sx={{ 
+          p: { xs: 2, md: 4 }, 
+          borderRadius: 4,
+          backdropFilter: 'blur(10px)',
+          backgroundColor: 'rgba(255, 255, 255, 0.85)',
+          border: '1px solid rgba(255, 255, 255, 0.4)',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+        }}>
+          <CardContent>
+            <motion.div 
+              initial={{ scale: 0 }} 
+              animate={{ scale: 1 }} 
+              transition={{ delay: 0.3, type: "spring", stiffness: 200 }}
+              style={{ textAlign: 'center', marginBottom: 32 }}
             >
-              {isSubmitting ? (
-                <span className="spinner"></span>
-              ) : (
-                "Authorize Access"
-              )}
-            </motion.button>
-          </form>
-        </motion.div>
+              <Box sx={{ 
+                width: 72, height: 72, mx: 'auto', mb: 2, 
+                background: 'linear-gradient(135deg, #4F46E5 0%, #6366F1 100%)',
+                borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: '0 10px 20px rgba(79,70,229,0.4)',
+                transform: 'translateZ(20px)'
+              }}>
+                <SchoolIcon sx={{ color: 'white', fontSize: 36 }} />
+              </Box>
+              <Typography variant="h4" component="h1" color="primary" gutterBottom sx={{ fontWeight: 800 }}>
+                Campus Gateway
+              </Typography>
+              <Typography variant="body1" color="text.secondary">
+                Sign in to access your student portal
+              </Typography>
+            </motion.div>
+
+            <form onSubmit={handleLogin}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, transformStyle: 'preserve-3d' }}>
+                <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.4 }}>
+                  <TextField
+                    label="Student Email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="student@campus.edu"
+                    required
+                    fullWidth
+                    // @ts-ignore
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <EmailIcon color="action" />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                </motion.div>
+                
+                <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.5 }}>
+                  <TextField
+                    label="Client ID"
+                    type="text"
+                    value={clientId}
+                    onChange={(e) => setClientId(e.target.value)}
+                    required
+                    fullWidth
+                    // @ts-ignore
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <CodeIcon color="action" />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                </motion.div>
+                
+                <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.6 }}>
+                  <TextField
+                    label="Client Secret Code"
+                    type="password"
+                    value={clientSecret}
+                    onChange={(e) => setClientSecret(e.target.value)}
+                    placeholder="••••••••••••••••"
+                    required
+                    fullWidth
+                    // @ts-ignore
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <VpnKeyIcon color="action" />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                </motion.div>
+
+                {authError && (
+                  <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
+                    <Alert severity="error" sx={{ borderRadius: 2 }}>{authError}</Alert>
+                  </motion.div>
+                )}
+
+                <motion.div 
+                  initial={{ y: 20, opacity: 0 }} 
+                  animate={{ y: 0, opacity: 1 }} 
+                  transition={{ delay: 0.7 }}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Button 
+                    type="submit" 
+                    variant="contained" 
+                    size="large" 
+                    disabled={isSubmitting}
+                    fullWidth
+                    sx={{ mt: 2, py: 1.5, fontSize: '1.1rem', boxShadow: '0 8px 20px rgba(79,70,229,0.3)' }}
+                  >
+                    {isSubmitting ? <CircularProgress size={24} color="inherit" /> : "Authenticate Securely"}
+                  </Button>
+                </motion.div>
+              </Box>
+            </form>
+          </CardContent>
+        </Card>
       </motion.div>
-    </div>
+    </Box>
   );
 }
